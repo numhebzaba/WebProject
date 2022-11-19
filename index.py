@@ -30,7 +30,7 @@ app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
 UPLOAD_PICTURE = os.path.join(os.path.dirname(__file__), "static\picture")
 
 @app.route('/', methods=["GET","POST"])
-def index():
+def index_check():
     session['user'] = ''
     session['audit'] = False
     return render_template('login.html')
@@ -50,14 +50,6 @@ def validate_register():
         encypt_passwd = hashlib.md5(password.encode()).hexdigest()
         conn.reconnect()
         cur = conn.cursor()
-        sql_createTable = '''
-            CREATE TABLE IF NOT EXISTS username (id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(255), email VARCHAR(100),password VARCHAR(100), audit TINYINT,)
-        '''
-        #val = (user, encypt_passwd, fname, 1) #tuple
-        cur.execute(sql_createTable)
-
-        conn.reconnect()
-        cur = conn.cursor()
         sql_insert = '''
             INSERT INTO username(username,email,password,audit)
             VALUES(%s, %s, %s, %s)
@@ -66,7 +58,7 @@ def validate_register():
         cur.execute(sql_insert, val)
         conn.commit()
         conn.close()
-        
+
         return render_template('login.html')
     else:
         return redirect('/register')
@@ -96,7 +88,7 @@ def validate_login():
             if encrpt_password == data[0]:
                 session['user'] = user
                 session['audit'] = True    
-                return render_template('index.html')
+                return redirect('/index')
             else:
                 return redirect('/login')
 
@@ -105,8 +97,22 @@ def validate_login():
     except:
         return redirect('/login')
 
+@app.route('/index', methods=["GET","POST"])
+def add_data():
+    conn.reconnect()
+    cur = conn.cursor()
+    sql = '''
+        SELECT cloth_name,price,file_location,tag
+        FROM clothes
+        ORDER BY ID
+        '''
+    cur.execute(sql)
+    data = cur.fetchall()
+    conn.close()
+    return render_template('index.html', clothes=data)
+
 @app.route('/logout', methods=["GET","POST"])
-def sign_out():
+def log_out():
     session.pop('user', None)
     session.pop('audit', None)
     return redirect('/')
