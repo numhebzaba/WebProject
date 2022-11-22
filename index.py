@@ -197,15 +197,13 @@ def cart_minus(clothe):
                 UPDATE cart SET quantity=%s
                 WHERE id_cart=%s 
             '''
-            if value[3] >=0:
-                print(1111111111)
+            if value[3] >0:
                 val = (value[3]-1,value[4])
-            conn.reconnect()
-            cur = conn.cursor()
-            cur.execute(sql,val)
-            conn.commit()
-            conn.close()
-            create_new_id_cart = False
+                conn.reconnect()
+                cur = conn.cursor()
+                cur.execute(sql,val)
+                conn.commit()
+                conn.close()
 
     conn.reconnect()
     cur = conn.cursor()

@@ -449,8 +449,7 @@
                 <div class="product-item bg-light mb-4">
                     <div class="product-img position-relative overflow-hidden">
                         <img class="img-fluid w-100" src="{{ url_for('static', filename='img/product-2.jpg') }}" alt="">
-                        <div class="product-action">
-                            
+                        <div class="product-action">  
                             <form action="/cart" method="post"  >
                                 <input type = "hidden" name="cloth_name" value="cloth_name_XXX">
                                 <input type = "hidden" name="price" value="999">
@@ -485,8 +484,14 @@
                     <div class="product-img position-relative overflow-hidden">
                         <img class="img-fluid w-100" src="{{clothe[2]}}" alt="">
                         <div class="product-action">
-                            <a class="btn btn-outline-dark btn-square" href="/cart"><i class="fa fa-shopping-cart"></i></a>
-
+                            <form action="/cart" method="post"  >
+                                <input type = "hidden" name="cloth_name" value="{{clothe[0]}}">
+                                <input type = "hidden" name="price" value="{{clothe[1]}}">
+                                <input type = "hidden" name="file_location" value="{{clothe[2]}}">
+                                <button type ="submit" class = "btn">
+                                    <a class="btn btn-outline-dark btn-square"><i class="fa fa-shopping-cart"></i></a>
+                                </button>
+                            </form>
                         </div>
                     </div>
                     <div class="text-center py-4">
