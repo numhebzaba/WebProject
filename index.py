@@ -99,6 +99,7 @@ def validate_login():
 
 @app.route('/index', methods=["GET","POST"])
 def add_data():
+    username = session['user']
     conn.reconnect()
     cur = conn.cursor()
     sql = '''
@@ -109,7 +110,8 @@ def add_data():
     cur.execute(sql)
     data = cur.fetchall()
     conn.close()
-    return render_template('index.html', clothes=data)
+    print(username)
+    return render_template('index.html', clothes=data , username=username)
 
 @app.route('/cart', methods=["GET","POST"])
 def cart():
@@ -172,7 +174,7 @@ def cart():
     for value in data:
         subtotal = subtotal+value[5]
 
-    return render_template('cart.html', cart = data,subtotal =subtotal)
+    return render_template('cart.html', cart = data,subtotal =subtotal,username=username)
 
 @app.route('/cart-minus/<clothe>', methods=["GET","POST"])
 def cart_minus(clothe):
@@ -221,7 +223,7 @@ def cart_minus(clothe):
     for value in data:
         subtotal = subtotal+value[5]
 
-    return render_template('cart.html', cart = data,subtotal =subtotal)
+    return render_template('cart.html', cart = data,subtotal =subtotal,username=username)
 
 @app.route('/cart-plus/<clothe>', methods=["GET","POST"])
 def cart_plus(clothe):
@@ -272,7 +274,7 @@ def cart_plus(clothe):
     for value in data:
         subtotal = subtotal+value[5]
 
-    return render_template('cart.html', cart = data,subtotal =subtotal)
+    return render_template('cart.html', cart = data,subtotal =subtotal,username=username)
 
 @app.route('/cart-delete/<clothe>', methods=["GET","POST"])
 def cart_delete(clothe):
@@ -302,13 +304,69 @@ def cart_delete(clothe):
     for value in data:
         subtotal = subtotal+value[5]
 
-    return render_template('cart.html', cart = data,subtotal =subtotal)
+    return render_template('cart.html', cart = data,subtotal =subtotal,username=username)
+
+@app.route('/cart-checkout', methods=["GET","POST"])
+def cart_checkout():
+    username = session['user']
+
+    conn.reconnect()
+    cur = conn.cursor()
+    sql = '''
+        SELECT username, cloth_name, price, quantity, file_location, price*quantity  AS total_price 
+        FROM cart
+        WHERE username=%s
+    '''
+    val = (username,)
+    cur.execute(sql,val)
+    data = cur.fetchall()
+    conn.close()
+    print(data[0])
+    
+    for x in data:
+        conn.reconnect()
+        cur = conn.cursor()
+        sql_insert = '''
+            INSERT INTO product_order (username, clothe_name, quantity, status)
+            VALUES(%s, %s, %s, %s)
+        '''
+        status = "paid"
+        val = (x[0], x[1], x[3], status) #tuple
+        cur.execute(sql_insert, val)
+        conn.commit()
+        conn.close()
+
+    conn.reconnect()
+    cur = conn.cursor()
+    sql = 'DELETE FROM cart WHERE username=%s'
+    val = (username,)
+    cur.execute(sql, val)
+    conn.commit()
+    conn.close()
+
+    conn.reconnect()
+    cur = conn.cursor()
+    sql = '''
+        SELECT username, cloth_name, price, quantity, file_location, price*quantity  AS total_price 
+        FROM cart
+        WHERE username=%s
+    '''
+    val = (username,)
+    cur.execute(sql,val)
+    data = cur.fetchall()
+    conn.close()
+    
+    subtotal = 0
+    for value in data:
+        subtotal = subtotal+value[5]
+
+    return render_template('cart.html', cart = data,subtotal =subtotal,username=username)
 
 @app.route('/logout', methods=["GET","POST"])
-def log_out():
+def logout():
     session.pop('user', None)
     session.pop('audit', None)
-    return redirect('/')
+    return redirect('/login')
 
 @app.errorhandler(404)
 def page_not_found(e):
