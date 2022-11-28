@@ -110,71 +110,94 @@ def add_data():
     cur.execute(sql)
     data = cur.fetchall()
     conn.close()
-    print(username)
     return render_template('index.html', clothes=data , username=username)
 
 @app.route('/cart', methods=["GET","POST"])
 def cart():
-    username = session['user']
-    cloth_name = request.form['cloth_name']
-    price = request.form['price']
-    file_location = request.form['file_location'] 
 
-    conn.reconnect()
-    cur = conn.cursor()
-    sql = '''
-        SELECT username,cloth_name,price,quantity,id_cart
-        FROM cart
-        WHERE username=%s
-        '''
-    val = (username,)
-    cur.execute(sql,val)
-    data = cur.fetchall()
-    conn.close()
-    create_new_id_cart = True
-    for value in data:
-        if username == value[0] and cloth_name == value[1]:
-            sql = '''
-                UPDATE cart SET quantity=%s
-                WHERE id_cart=%s 
-            '''
-            val = (value[3]+1,value[4])
-            conn.reconnect()
-            cur = conn.cursor()
-            cur.execute(sql,val)
-            conn.commit()
-            conn.close()
-            create_new_id_cart = False
+    try:
+        username = session['user']
+        cloth_name = request.form['cloth_name']
+        price = request.form['price']
+        file_location = request.form['file_location'] 
 
-    if create_new_id_cart:
         conn.reconnect()
         cur = conn.cursor()
-        sql_insert = '''
-            INSERT INTO cart(username,cloth_name,price,quantity,file_location)
-            VALUES(%s, %s, %s, %s, %s)
+        sql = '''
+            SELECT username,cloth_name,price,quantity,id_cart
+            FROM cart
+            WHERE username=%s
         '''
-        val = (username, cloth_name, price, 1,file_location) #tuple
-        cur.execute(sql_insert, val)
-        conn.commit()
+        val = (username,)
+        cur.execute(sql,val)
+        data = cur.fetchall()
         conn.close()
+        create_new_id_cart = True
+        for value in data:
+            if username == value[0] and cloth_name == value[1]:
+                sql = '''
+                    UPDATE cart SET quantity=%s
+                    WHERE id_cart=%s 
+                '''
+                val = (value[3]+1,value[4])
+                conn.reconnect()
+                cur = conn.cursor()
+                cur.execute(sql,val)
+                conn.commit()
+                conn.close()
+                create_new_id_cart = False
 
-    conn.reconnect()
-    cur = conn.cursor()
-    sql = '''
-        SELECT username, cloth_name, price, quantity, file_location, price*quantity  AS total_price
-        FROM cart
-        WHERE username=%s
-    '''
-    val = (username,)
-    cur.execute(sql,val)
-    data = cur.fetchall()
-    conn.close()
+        if create_new_id_cart:
+            conn.reconnect()
+            cur = conn.cursor()
+            sql_insert = '''
+                INSERT INTO cart(username,cloth_name,price,quantity,file_location)
+                VALUES(%s, %s, %s, %s, %s)
+            '''
+            val = (username, cloth_name, price, 1,file_location) #tuple
+            cur.execute(sql_insert, val)
+            conn.commit()
+            conn.close()
 
-    subtotal = 0
-    for value in data:
-        subtotal = subtotal+value[5]
+        conn.reconnect()
+        cur = conn.cursor()
+        sql = '''
+            SELECT username, cloth_name, price, quantity, file_location, price*quantity  AS total_price
+            FROM cart
+            WHERE username=%s
+        '''
+        val = (username,)
+        cur.execute(sql,val)
+        data = cur.fetchall()
+        conn.close()
+        subtotal = 0
+        for value in data:
+            subtotal = subtotal+value[5]
 
-    return render_template('cart.html', cart = data,subtotal =subtotal,username=username)
+        return render_template('cart.html', cart = data,subtotal =subtotal,username=username)
+    except:
+        username = session['user']
+
+        conn.reconnect()
+        cur = conn.cursor()
+        sql = '''
+            SELECT username, cloth_name, price, quantity, file_location, price*quantity  AS total_price 
+            FROM cart
+            WHERE username=%s
+        '''
+        val = (username,)
+        cur.execute(sql,val)
+        data = cur.fetchall()
+        conn.close()
+    
+        subtotal = 0
+        for value in data:
+            subtotal = subtotal+value[5]
+        return render_template('cart.html', cart = data,subtotal =subtotal,username=username)
+
+    
+
+    
 
 @app.route('/cart-minus/<clothe>', methods=["GET","POST"])
 def cart_minus(clothe):
